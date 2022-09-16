@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Button,
   Container,
@@ -17,10 +17,23 @@ const Layout = () => {
   const [prNumber, setPRNumber] = useState('')
   const [repo, setRepo] = useState('shop-manager')
   const [data, setData] = useState([])
+  const [commitData, setCommitData] = useState([])
+  const [page, setPage] = useState(1)
 
   const octokit = new Octokit({
     auth:  process.env.REACT_APP_API_KEY
   })
+
+  useEffect(() => {
+    if (data.length) {
+      setCommitData(data.map((item, index) => ({
+        increment: index + 1,
+        author: item.author.login,
+        message: item.commit.message,
+        rel: item.commit.message.split("rel:")[1]
+      })));
+    }
+  }, [data.length]);
 
   const handleFetchData = async () => {
     if (!prNumber) return;
@@ -29,7 +42,9 @@ const Layout = () => {
       const {data} = await octokit.request(`GET /repos/{owner}/{repo}/pulls/{pull_number}/commits`, {
         owner: 'JOyakawa1',
         repo,
-        pull_number: prNumber
+        pull_number: prNumber,
+        per_page: 100,
+        page
       })
       setData(data)
     } catch (e) {
@@ -42,26 +57,19 @@ const Layout = () => {
   const columns = [
     {
       name: 'increment',
-      label: '#',
-      options: {
-        filter: false,
-        sort: false,
-        customBodyRenderLite: (dataIndex) => {
-          return (
-            <>
-              {dataIndex + 1}
-            </>
-          );
-        }
-      }
+      label: '#'
     },
     {
-      name: 'author.login',
+      name: 'author',
       label: 'Author'
     },
     {
-      name: 'commit.message',
+      name: 'message',
       label: 'Commit Message'
+    },
+    {
+      name: 'rel',
+      label: 'Related Ticket'
     }
   ]
 
@@ -83,9 +91,10 @@ const Layout = () => {
             >
               <MenuItem value="shop-manager">Shop Manager Front</MenuItem>
               <MenuItem value="shop-manager-api">Shop Manager Back</MenuItem>
+              <MenuItem value="shop">Shop</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               size="small"
@@ -96,7 +105,23 @@ const Layout = () => {
               onChange={(event) => setPRNumber(event.target.value)}
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={2}>
+            <TextField
+              fullWidth
+              size="small"
+              variant="outlined"
+              name="page"
+              label="Data Page"
+              select
+              value={page}
+              onChange={(event) => setPage(event.target.value)}
+            >
+              {[1, 2, 3, 4, 5].map((i) =>(
+                <MenuItem key={i} value={i}>{i}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={3}>
             <Button
               fullWidth
               variant="contained"
@@ -109,12 +134,12 @@ const Layout = () => {
         </Grid>
       </Container>
       <Container sx={{mt: 5}}>
-        {!!data.length
+        {!!commitData.length
           ?
           <>
           <MUIDataTable
             title={''}
-            data={data}
+            data={commitData}
             columns={columns}
             options={{
               filter: true,
@@ -126,7 +151,8 @@ const Layout = () => {
               selectableRows: 'none',
               print: false,
               download: true,
-              rowsPerPageOptions: [10, 20, 40, 80, 100]
+              rowsPerPage: 20,
+              rowsPerPageOptions: [20, 40, 80, 100]
             }}
           />
           </>
