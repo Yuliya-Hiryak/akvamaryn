@@ -1,12 +1,9 @@
-import { data } from './data'
-import { data2 } from './data2'
+import Layout from './components/Layout';
 
-function App() {
+
+const App = () => {
   return (
-    <div>
-      {data2.map((c) => <div>{c.commit.message}</div>)}
-      { data2.length}
-    </div>
+    <Layout />
   );
 }
 
