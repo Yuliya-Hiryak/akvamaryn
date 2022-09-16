@@ -1,4 +1,3 @@
-import './App.css';
 import { data } from './data'
 import { data2 } from './data2'
 
